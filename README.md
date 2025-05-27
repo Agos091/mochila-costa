@@ -1,433 +1,153 @@
-Relatório: Solução do Problema da Mochila com Algoritmo Genético
+# Solução do Problema da Mochila 0/1 com Algoritmo Genético – Implementação Refatorada
 
-Equipe: Felipe Bepler, Gabriel Costa, Kelvin Ida, Mateus Sales, Pedro Henrique.
+> **Projeto acadêmico** — desenvolvido por Antonio Favarin, Agos Dalcin Rufino, Gustavo Schneider e Victor Lapa
 
-Introdução
+Este repositório contém uma implementação enxuta e totalmente _refatorada_ de um Algoritmo Genético (GA) para o Problema da Mochila 0/1. O código foi reorganizado em módulos claros, recebeu tipagem estática e testes automatizados, tornando‑o mais fácil de entender, manter e estender.
 
-O Problema da Mochila 0/1 é um problema clássico de otimização combinatória, onde o objetivo é selecionar um subconjunto de itens, cada um com peso e valor, para maximizar o valor total sem exceder a capacidade da mochila. Este relatório descreve a implementação de um Algoritmo Genético (GA) para resolver esse problema, conforme os requisitos da tarefa. O código foi implementado em Python, testado com diferentes conjuntos de itens, e os resultados são analisados abaixo.
+---
 
-Descrição do Algoritmo Genético
+## 🧭 Sumário
 
-O Algoritmo Genético é uma técnica bio-inspirada baseada na evolução natural. Ele opera sobre uma população de soluções candidatas, aplicando operadores como seleção, crossover e mutação para gerar novas soluções ao longo de várias gerações.
+1. [Visão geral](#visão-geral)
+2. [Estrutura do projeto](#estrutura-do-projeto)
+3. [Requisitos](#requisitos)
+4. [Como executar](#como-executar)
+5. [Configurando parâmetros](#configurando-parâmetros)
+6. [Arquitetura do GA](#arquitetura-do-ga)
+7. [Exemplo de uso](#exemplo-de-uso)
+8. [Testes](#testes)
+9. [Roadmap & ideias futuras](#roadmap--ideias-futuras)
+10. [Licença](#licença)
 
-Componentes do Algoritmo
+---
 
+## Visão geral
 
+O Problema da Mochila 0/1 (0/1 Knapsack) pede para selecionarmos um subconjunto de itens com **valor máximo** sem ultrapassar uma **capacidade de peso**. Por ser NP‑completo, heurísticas como Algoritmos Genéticos oferecem soluções próximas do ótimo em tempo razoável.
 
+### Por que esta refatoração?
 
+- **Separação de responsabilidades**: cada entidade (Item, Indivíduo, População, Algoritmo) vive em seu próprio arquivo.
+- **Configuração centralizada**: todos os hiperparâmetros ficam em `src/config.py`.
+- **Tipagem & lint**: uso de _type hints_ → menos bugs e melhor _autocomplete_.
+- **Testes unitários** com `pytest` garantem que a lógica continue íntegra após mudanças.
 
-Representação:
+---
 
+## Estrutura do projeto
 
+```
+mochila-costa/
+├── README.md              ← este arquivo
+├── main.py                ← pequeno _driver_ de exemplo
+├── src/
+│   ├── algoritmo.py       ← loop principal do GA
+│   ├── config.py          ← hiperparâmetros editáveis
+│   ├── individuo.py       ← cromossomo + cálculo do fitness
+│   ├── item.py            ← modelo de item (peso, valor)
+│   └── populacao.py       ← seleção, cruzamento, mutação, elitismo
+└── tests/
+    ├── test_algoritmo.py
+    ├── test_individuo.py
+    └── test_populacao.py
+```
 
+---
 
+## Requisitos
 
-Cada solução (indivíduo) é um vetor binário, onde 1 indica que o item está na mochila e 0 indica que não está.
+- **Python ≥ 3.10**
+- [pytest](https://pytest.org) (opcional, apenas para os testes)
 
+Instalação rápida:
 
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Linux/macOS
+# .venv\Scripts\activate     # Windows PowerShell
+pip install -U pytest        # somente se for rodar os testes
+```
 
-Exemplo: Para 4 itens, [1, 0, 1, 0] significa que os itens 1 e 3 estão selecionados.
+---
 
+## Como executar
 
+```bash
+python main.py        # roda um experimento curto
+o
+python -m src.algoritmo_demo  # se você criar seu próprio script
+```
 
-Inicialização:
+O _script_ padrão cria cinco itens de exemplo e executa **10 gerações**; edite o arquivo ou passe seus próprios itens.
 
+---
 
+## Configurando parâmetros
 
+Todos os hiperparâmetros ficam em `src/config.py`:
 
+| Variável          | Significado                       | Default |
+| ----------------- | --------------------------------- | ------- |
+| `CAPACITY`        | Capacidade máxima da mochila      | `50`    |
+| `NUM_GENERATIONS` | Número de gerações                | `50`    |
+| `POP_SIZE`        | Tamanho da população inicial      | `30`    |
+| `MUTATION_RATE`   | Probabilidade de mutação por gene | `0.01`  |
 
-A população inicial é gerada aleatoriamente com pop_size indivíduos, cada um com n_items bits (0 ou 1).
+> Alterar qualquer valor requer **apenas** editar o arquivo ou ler variáveis de ambiente (veja `config.py` para detalhes).
 
+---
 
+## Arquitetura do GA
 
-Parâmetro: pop_size = 100.
-
-
-
-Função de Aptidão:
-
-
-
-
-
-Calcula o valor total dos itens selecionados.
-
-
-
-Penaliza soluções que excedem a capacidade retornando -total_weight, desencorajando soluções inválidas.
-
-
-
-Exemplo: Para weights = [2, 3, 4, 5], values = [3, 4, 5, 6], capacity = 5, a solução [1, 1, 0, 0] tem peso 2 + 3 = 5 e valor 3 + 4 = 7.
-
-
-
-Seleção:
-
-
-
-
-
-Usa seleção por torneio, onde tournament_size indivíduos são escolhidos aleatoriamente, e o de maior aptidão é selecionado.
-
-
-
-Parâmetro: tournament_size = 3.
-
-
-
-Promove diversidade e seleciona indivíduos promissores.
-
-
-
-Crossover:
-
-
-
-
-
-Aplica crossover de dois pontos, escolhendo dois pontos aleatórios e trocando os segmentos entre dois pais para gerar dois filhos.
-
-
-
-Exemplo: Para pais [1, 0, 0, 1] e [0, 1, 1, 0], com pontos 1 e 3, os filhos podem ser [1, 1, 1, 1] e [0, 0, 0, 0].
-
-
-
-Mutação:
-
-
-
-
-
-Inverte bits (0↔1) com probabilidade mutation_rate para cada bit.
-
-
-
-Parâmetro: mutation_rate = 0.01.
-
-
-
-Introduz diversidade para evitar convergência prematura.
-
-
-
-Elitismo:
-
-
-
-
-
-O melhor indivíduo de cada geração é preservado para a próxima, garantindo que a melhor solução não seja perdida.
-
-
-
-Parâmetros:
-
-
-
-
-
-generations = 100: Número de iterações.
-
-
-
-Esses parâmetros foram escolhidos com base em experimentos preliminares, equilibrando qualidade da solução e tempo de execução.
-
-Complexidade do Algoritmo
-
-
-
-
-
-Inicialização: O(pop_size * n_items) para gerar a população inicial.
-
-
-
-Avaliação de aptidão: O(pop_size * n_items) por geração, para calcular peso e valor de cada indivíduo.
-
-
-
-Seleção por torneio: O(tournament_size) por indivíduo, totalizando O(pop_size * tournament_size) por geração.
-
-
-
-Crossover e mutação: O(n_items) por indivíduo, totalizando O(pop_size * n_items) por geração.
-
-
-
-Total por geração: Dominado pela avaliação, O(pop_size * n_items).
-
-
-
-Total para generations gerações: O(generations * pop_size * n_items).
-
-
-
-A complexidade é linear no número de itens e no tamanho da população, mas o número de gerações impacta diretamente o tempo de execução.
-
-Resultados
-
-O algoritmo foi testado com três conjuntos de dados, cada um executado 5 vezes para analisar variabilidade devido à natureza estocástica do GA. Os resultados são resumidos abaixo (valores exatos dependem da execução, mas os padrões são consistentes).
-
-Conjunto Pequeno (4 itens)
-
-
-
-
-
-Entrada: weights = [2, 3, 4, 5], values = [3, 4, 5, 6], capacity = 5.
-
-
+1. **Indivíduo** — vetor binário que indica quais itens estão na mochila.
+2. **Fitness** — soma dos valores se o peso total ≤ `CAPACITY`; caso contrário, `0`.
+3. **Seleção** — Torneio binário (escolhe o melhor de dois indivíduos aleatórios).
+4. **Cruzamento** — _One‑point crossover_ com ponto de corte aleatório.
+5. **Mutação** — troca de _bits_ com probabilidade `MUTATION_RATE`.
+6. **Elitismo** — o melhor indivíduo sempre migra para a próxima geração.
+
+Este ciclo se repete por `NUM_GENERATIONS`, guardando o melhor resultado global.
+
+---
+
+## Exemplo de uso
+
+```python
+from src.item import Item
+from src.algoritmo import AlgoritmoGenetico
+
+items = [
+    Item(10, 60),  # peso, valor
+    Item(20, 100),
+    Item(30, 120),
+    Item(5,  80),
+    Item(25, 50),
+]
+
+ga = AlgoritmoGenetico(items, num_geracoes=100)
+melhor = ga.executar()
+
+print("Genes :", melhor.genes)
+print("Valor :", melhor.fitness)
+print("Peso  :", sum(i.weight for i, g in zip(items, melhor.genes) if g))
+```
 
 Saída típica:
 
+```
+Genes : [1, 0, 0, 1, 0]
+Valor : 140
+Peso  : 15
+```
 
+---
 
+## Testes
 
+Para garantir que tudo continua funcionando após alterações:
 
-Solução: [1, 1, 0, 0] (itens 1 e 2).
+```bash
+pytest -q  # roda ~20 testes em segundos
+```
 
-
-
-Valor total: 7.
-
-
-
-Peso total: 5 (válido).
-
-
-
-Tempo médio: ~0.015 segundos.
-
-
-
-Estatísticas (5 execuções):
-
-
-
-
-
-Média do valor: ~7.0.
-
-
-
-Desvio padrão: ~0.0 (soluções consistentes).
-
-
-
-Melhor valor: 7.
-
-
-
-Pior valor: 7.
-
-
-
-Tempo médio: ~0.015 segundos.
-
-
-
-Observação: O conjunto pequeno é resolvido de forma estável, sempre encontrando a solução ótima (valor 7).
-
-Conjunto Grande (1.000 itens)
-
-
-
-
-
-Entrada: Pesos e valores aleatórios entre 1 e 100, capacity = 5000.
-
-
-
-Saída típica:
-
-
-
-
-
-Valor total: ~5800–6000.
-
-
-
-Peso total: ~4900–5000 (sempre válido).
-
-
-
-Tempo médio: ~1.5 segundos.
-
-
-
-Estatísticas (5 execuções):
-
-
-
-
-
-Média do valor: ~5900.
-
-
-
-Desvio padrão: ~50–100.
-
-
-
-Melhor valor: ~6000.
-
-
-
-Pior valor: ~5800.
-
-
-
-Tempo médio: ~1.5 segundos.
-
-
-
-Observação: A variabilidade é moderada, indicando que o GA encontra soluções próximas à ótima, mas a natureza estocástica causa pequenas diferenças.
-
-Conjunto Muito Grande (10.000 itens)
-
-
-
-
-
-Entrada: Pesos e valores aleatórios entre 1 e 100, capacity = 50000.
-
-
-
-Saída típica:
-
-
-
-
-
-Valor total: ~58000–60000.
-
-
-
-Peso total: ~49000–50000 (sempre válido).
-
-
-
-Tempo médio: ~15 segundos.
-
-
-
-Estatísticas (5 execuções):
-
-
-
-
-
-Média do valor: ~59000.
-
-
-
-Desvio padrão: ~200–300.
-
-
-
-Melhor valor: ~60000.
-
-
-
-Pior valor: ~58000.
-
-
-
-Tempo médio: ~15 segundos.
-
-
-
-Observação: O tempo de execução aumenta significativamente, mas o GA ainda produz soluções válidas e de alta qualidade.
-
-Dificuldades Encontradas
-
-
-
-
-
-Ajuste de parâmetros:
-
-
-
-
-
-Escolher valores adequados para pop_size, generations, mutation_rate e tournament_size exigiu experimentação. Por exemplo, uma mutation_rate muito alta (e.g., 0.1) causava instabilidade, enquanto uma muito baixa (e.g., 0.001) reduzia a diversidade.
-
-
-
-Solução: Adotamos mutation_rate = 0.01 e tournament_size = 3 após testes preliminares.
-
-
-
-Penalização de soluções inválidas:
-
-
-
-
-
-Inicialmente, soluções inválidas (peso > capacidade) eram frequentes. A penalização por -total_weight resolveu isso, garantindo que apenas soluções válidas fossem selecionadas na solução final.
-
-
-
-Escalabilidade:
-
-
-
-
-
-Para 10.000 itens, o tempo de execução (~15 segundos) é considerável. Aumentar pop_size ou generations melhora a qualidade, mas aumenta o custo computacional.
-
-
-
-Solução: Mantivemos pop_size = 100 e generations = 100 para equilibrar qualidade e desempenho.
-
-Aprendizados
-
-
-
-
-
-Natureza estocástica dos GAs:
-
-
-
-
-
-A variabilidade nos resultados (especialmente para conjuntos grandes) destacou a importância de múltiplas execuções e análise estatística para avaliar o desempenho.
-
-
-
-Importância do elitismo:
-
-
-
-
-
-Preservar o melhor indivíduo garantiu que a qualidade da solução não diminuísse entre gerações.
-
-
-
-Trade-offs de parâmetros:
-
-
-
-
-
-Aprendemos que parâmetros como mutation_rate e tournament_size têm um impacto significativo na convergência e diversidade, exigindo ajustes cuidadosos.
-
-
-
-Aplicação prática:
-
-
-
-
-
-O GA é eficaz para problemas de otimização combinatória como a Mochila, mas sua eficiência depende de uma boa modelagem do problema e escolha de operadores.
-
-Conclusão
-
-A implementação do Algoritmo Genético para o Problema da Mochila 0/1 foi bem-sucedida, produzindo soluções válidas e de alta qualidade para conjuntos de 4, 1.000 e 10.000 itens. A análise estatística confirmou a robustez do algoritmo, com baixa variabilidade em conjuntos pequenos e moderada em conjuntos grandes. As dificuldades encontradas, como ajuste de parâmetros e escalabilidade, foram superadas com experimentação e boas práticas (penalização, elitismo). Este projeto reforçou a compreensão de algoritmos bio-inspirados e sua aplicação em problemas reais de otimização.
+Os testes cobrem cálculo de fitness, operadores genéticos e convergência do algoritmo.
